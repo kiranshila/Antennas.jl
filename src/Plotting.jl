@@ -3,6 +3,7 @@ using Unitful
 using UnitfulRecipes
 include("Arrays.jl")
 include("RadiationPattern.jl")
+include("Arrays.jl")
 
 function grid_pattern(ϕ,θ,r,min,max)
     shape = (length(ϕ),length(θ))
@@ -13,7 +14,7 @@ function grid_pattern(ϕ,θ,r,min,max)
     # Reshape radius data
     r = [(data + abs(min))/(max+abs(min)) for data in r]
     # Eliminate negative numbers
-    replace!(x->x<min ? min : x,r)
+    replace!(x->x<0 ? 0 : x,r)
 
     for (i,phi) in enumerate(ϕ), (j,theta) in enumerate(θ)
         x[i,j] = r[i,j] * sind(theta) * cosd(phi)
@@ -81,6 +82,27 @@ end
         xlims := extrema(x)
         ylims := extrema(y)
         zlims := extrema(z)
+        x,y,z
+    end
+end
+
+@recipe function f(af::ArrayFactor)
+    # Extract unit from x
+    u = unit(af.locations[1][1])
+    x = map(x->x[1],af.locations) .|> u .|> ustrip
+    y = map(x->x[2],af.locations) .|> u .|> ustrip
+    z = map(x->x[3],af.locations) .|> u .|> ustrip
+
+    seriestype := :scatter
+    aspect_ratio --> :equal
+    xguide --> "X Position ($u)"
+    yguide --> "Y Position ($u)"
+    zguide --> "Z Position ($u)"
+    marker_z := abs.(af.excitations)
+    # Only do a 2D plot for 2D arrays
+    if all(x->x==0,z)
+        x,y
+    else
         x,y,z
     end
 end
