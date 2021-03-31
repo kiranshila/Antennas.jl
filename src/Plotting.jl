@@ -1,22 +1,21 @@
 using RecipesBase
 using Unitful
+using UnitfulRecipes
 include("Arrays.jl")
 include("RadiationPattern.jl")
 
-function grid_pattern(pattern::RadiationPattern;min,max)
-    shape = (length(pattern.ϕ),length(pattern.θ))
-    # Preallocalte matricies
+function grid_pattern(ϕ,θ,r,min,max)
+    shape = (length(ϕ),length(θ))
+    # Preallocate matricies
     x = zeros(Float64,shape)
     y = zeros(Float64,shape)
     z = zeros(Float64,shape)
-    # Grab gain data
-    gain = gain(pattern)
     # Reshape radius data
-    r = [(data + abs(min))/(max+abs(min)) for data in pattern.pattern]
+    r = [(data + abs(min))/(max+abs(min)) for data in r]
     # Eliminate negative numbers
-    replace!(x->x<0 ? 0 : x,r)
+    replace!(x->x<min ? min : x,r)
 
-    for (i,phi) in enumerate(pattern.ϕ), (j,theta) in enumerate(pattern.θ)
+    for (i,phi) in enumerate(ϕ), (j,theta) in enumerate(θ)
         x[i,j] = r[i,j] * sind(theta) * cosd(phi)
         y[i,j] = r[i,j] * sind(theta) * sind(phi)
         z[i,j] = r[i,j] * cosd(theta)
@@ -24,14 +23,64 @@ function grid_pattern(pattern::RadiationPattern;min,max)
     return x,y,z
 end
 
-@userplot PatternPlot
-@recipe function f(pp:PatternPlot)
-    # Check what we are plotting
-    # args could be θ,pattern ϕ,θ,pattern, or a RadiationPattern, or a ArrayFactor
+@userplot PolarPattern
+@recipe function f(pp::PolarPattern)
+    if length(pp.args) != 2 || !(typeof(pp.args[1]) <: AbstractVector) ||
+        !(typeof(pp.args[2]) <: AbstractVector)
+        error("Polar pattern should be given two vectors.  Got: $(typeof(pp.args))")
+    end
+    ϕ,r = pp.args
+
+    @series begin
+        projection := :polar
+        ϕ,r
+    end
 end
 
-@recipe function f(rp::RadiationPattern)
-    # Grid the pattern data
-    x,y,z = grid_pattern(rp)
-    # Gen color data, with clamping
-    color = [x < min ? min : x for x in pattern.pattern]
+@userplot SphericalPattern
+@recipe function f(sp::SphericalPattern)
+    if ((length(sp.args) != 3) && !(sp.args[1] isa RadiationPattern)) ||
+        !(sp.args[1] isa AbstractVector) || 
+        !(sp.args[2] isa AbstractVector) || 
+        !(sp.args[3] isa AbstractMatrix) ||
+        error("Spherical pattern should be given two vectors and a matrix, or a `RadiationPattern` .
+               Got: $(typeof(sp.args))")
+    end
+    if sp.args[1] isa RadiationPattern
+        ϕ = sp.args[1].dims[1].val
+        θ = sp.args[1].dims[2].val
+        r = gain(sp.args[1])
+    else
+        ϕ,θ,r = sp.args
+    end
+    r = ustrip(r)
+    if haskey(plotattributes,:lims)
+        if plotattributes[:lims][1] == :auto
+            min = minimum(r)
+            max = plotattributes[:lims][2]
+        elseif plotattributes[:lims][2] == :auto
+            min = plotattributes[:lims][1]
+            max = maximum(r)
+        else
+            min,max = plotattributes[:lims]
+        end
+    else
+        min = minimum(r)
+        max = maximum(r)
+    end
+    x,y,z = grid_pattern(ϕ,θ,r,min,max)
+    c = [x < min ? min : x for x in r]
+    @series begin
+        grid := false
+        seriestype := :surface
+        xaxis := false
+        yaxis := false
+        zaxis := false
+        lims := :auto
+        fill_z := c
+        xlims := extrema(x)
+        ylims := extrema(y)
+        zlims := extrema(z)
+        x,y,z
+    end
+end
