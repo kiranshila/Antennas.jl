@@ -16,6 +16,7 @@ UnitfulRecipes = "42071c24-d89e-48dd-8a24-8a12d9b8861f"
 
 [compat]
 PhysicalConstants = "0.2"
+UnitfulRecipes = "1.2"
 julia = "1.6"
 
 [extras]
