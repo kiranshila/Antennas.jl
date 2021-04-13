@@ -74,15 +74,17 @@ end
     RadiationPattern(data, dims, refdims, name, metadata)
 end
 
-function gain(pattern::AbstractMatrix{T}) where {T <: Gain}
+dB = Gain{Unitful.LogInfo{:Decibel, 10, 10}, :?, Float64}
+
+function gain(pattern::AbstractArray{T}) where {T <: Gain}
     pattern
 end
 
-function gain(pattern::AbstractMatrix{<:Real})
+function gain(pattern::AbstractArray{<:Real})
     @. 20log10(pattern) * u"dB"
 end
 
-function gain(pattern::AbstractMatrix{<:Complex})
+function gain(pattern::AbstractArray{<:Complex})
     @. 20log10(abs(pattern)) * u"dB"
 end
 

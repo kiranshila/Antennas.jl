@@ -4,10 +4,10 @@ include("../src/Plotting.jl")
 
 x = read_HFSS_pattern("test/data/lens.csv")
 
-sphericalpattern(x,lims=(-10,:auto))
+sphericalpattern(x)
 
 phi = 0:360
-theta = 0:180
+theta = 0:360
 
 freq = 38u"GHz"
 lens_diameter = 15.8u"mm"
@@ -29,4 +29,7 @@ pattern = [af(p,t,freq) for p ∈ phi, t ∈ theta]
 
 buh = RadiationPattern(pattern,phi,theta)
 
-sphericalpattern(buh,lims=(-20,5))
+r = ustrip(gain(buh[ϕ(At(0))]))
+theta = deg2rad.(Array(buh.dims[2].val))
+
+p = polarpattern(theta,r,lims=(-30,10))

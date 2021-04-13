@@ -62,3 +62,10 @@ end
 function λ(f::Real)
     SpeedOfLightInVacuum/(f*u"Hz") |> u"m"
 end
+
+"""
+    calibrate(array,phase_center)
+"""
+function calibrate()
+
+end

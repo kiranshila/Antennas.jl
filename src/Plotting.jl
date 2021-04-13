@@ -5,45 +5,72 @@ include("Arrays.jl")
 include("RadiationPattern.jl")
 include("Arrays.jl")
 
-function grid_pattern(ϕ,θ,r,min,max)
-    shape = (length(ϕ),length(θ))
+function grid_pattern(ϕ, θ, r, min, max)
+    shape = (length(ϕ), length(θ))
     # Preallocate matricies
-    x = zeros(Float64,shape)
-    y = zeros(Float64,shape)
-    z = zeros(Float64,shape)
+    x = zeros(Float64, shape)
+    y = zeros(Float64, shape)
+    z = zeros(Float64, shape)
     # Reshape radius data
-    r = [(data + abs(min))/(max+abs(min)) for data in r]
+    r = [(data + abs(min)) / (max + abs(min)) for data in r]
     # Eliminate negative numbers
-    replace!(x->x<0 ? 0 : x,r)
-
-    for (i,phi) in enumerate(ϕ), (j,theta) in enumerate(θ)
+    replace!(x -> x < 0 ? 0 : x, r)
+    for (i, phi) in enumerate(ϕ), (j, theta) in enumerate(θ)
         x[i,j] = r[i,j] * sind(theta) * cosd(phi)
         y[i,j] = r[i,j] * sind(theta) * sind(phi)
         z[i,j] = r[i,j] * cosd(theta)
     end
-    return x,y,z
+    return x, y, z
 end
 
 @userplot PolarPattern
 @recipe function f(pp::PolarPattern)
-    if length(pp.args) != 2 || !(typeof(pp.args[1]) <: AbstractVector) ||
-        !(typeof(pp.args[2]) <: AbstractVector)
-        error("Polar pattern should be given two vectors.  Got: $(typeof(pp.args))")
+    if !(((length(sp.args) == 1) && (sp.args[1] isa RadiationPattern)) ||
+        ((length(sp.args) == 2) && (sp.args[1] isa AbstractVector &&
+                                    sp.args[2] isa AbstractVector)))
+       error("Spherical pattern should be given two vectors and a matrix, or a `RadiationPattern` .
+              Got: $(typeof(sp.args))")
+   end
+    if pp.args[1] isa RadiationPattern
+        @show pp.args[1]
+        θ = deg2rad.(pp.args[1].dims[2].val)
+        r = gain(pp.args[1])
+    else
+        θ, r = pp.args
     end
-    ϕ,r = pp.args
-
+    # R is log-scalled, θ was in degrees
+    r = ustrip(r)
+    if haskey(plotattributes, :lims)
+        if plotattributes[:lims][1] == :auto
+            min = minimum(r)
+            max = plotattributes[:lims][2]
+        elseif plotattributes[:lims][2] == :auto
+            min = plotattributes[:lims][1]
+            max = maximum(r)
+        else
+            min, max = plotattributes[:lims]
+        end
+    else
+        min = minimum(r)
+        max = maximum(r)
+    end
+    # Clamp all values less then the minimum to the minimum
+    r = [x < min ? min : x for x in r]
     @series begin
         projection := :polar
-        ϕ,r
+        lims --> (min, max)
+        θ, ustrip(r)
     end
 end
 
+
+
 @userplot SphericalPattern
 @recipe function f(sp::SphericalPattern)
-    if ((length(sp.args) != 3) && !(sp.args[1] isa RadiationPattern)) ||
-        !(sp.args[1] isa AbstractVector) || 
-        !(sp.args[2] isa AbstractVector) || 
-        !(sp.args[3] isa AbstractMatrix) ||
+    if !(((length(sp.args) == 1) && (sp.args[1] isa RadiationPattern)) ||
+         ((length(sp.args) == 3) && (sp.args[1] isa AbstractVector &&
+                                     sp.args[2] isa AbstractVector &&
+                                     sp.args[3] isa AbstractMatrix)))
         error("Spherical pattern should be given two vectors and a matrix, or a `RadiationPattern` .
                Got: $(typeof(sp.args))")
     end
@@ -52,10 +79,10 @@ end
         θ = sp.args[1].dims[2].val
         r = gain(sp.args[1])
     else
-        ϕ,θ,r = sp.args
+        ϕ, θ, r = sp.args
     end
     r = ustrip(r)
-    if haskey(plotattributes,:lims)
+    if haskey(plotattributes, :lims)
         if plotattributes[:lims][1] == :auto
             min = minimum(r)
             max = plotattributes[:lims][2]
@@ -63,13 +90,13 @@ end
             min = plotattributes[:lims][1]
             max = maximum(r)
         else
-            min,max = plotattributes[:lims]
+            min, max = plotattributes[:lims]
         end
     else
         min = minimum(r)
         max = maximum(r)
     end
-    x,y,z = grid_pattern(ϕ,θ,r,min,max)
+    x, y, z = grid_pattern(ϕ, θ, r, min, max)
     c = [x < min ? min : x for x in r]
     @series begin
         grid := false
@@ -82,16 +109,16 @@ end
         xlims := extrema(x)
         ylims := extrema(y)
         zlims := extrema(z)
-        x,y,z
+        x, y, z
     end
 end
 
 @recipe function f(af::ArrayFactor)
     # Extract unit from x
     u = unit(af.locations[1][1])
-    x = map(x->x[1],af.locations) .|> u .|> ustrip
-    y = map(x->x[2],af.locations) .|> u .|> ustrip
-    z = map(x->x[3],af.locations) .|> u .|> ustrip
+    x = map(x -> x[1], af.locations) .|> u .|> ustrip
+    y = map(x -> x[2], af.locations) .|> u .|> ustrip
+    z = map(x -> x[3], af.locations) .|> u .|> ustrip
 
     seriestype := :scatter
     aspect_ratio --> :equal
@@ -100,9 +127,9 @@ end
     zguide --> "Z Position ($u)"
     marker_z := abs.(af.excitations)
     # Only do a 2D plot for 2D arrays
-    if all(x->x==0,z)
-        x,y
+    if all(x -> x == 0, z)
+        x, y
     else
-        x,y,z
+        x, y, z
     end
 end
