@@ -25,21 +25,24 @@ end
 
 @userplot PolarPattern
 @recipe function f(pp::PolarPattern)
-    if !(((length(sp.args) == 1) && (sp.args[1] isa RadiationPattern)) ||
-        ((length(sp.args) == 2) && (sp.args[1] isa AbstractVector &&
-                                    sp.args[2] isa AbstractVector)))
-       error("Spherical pattern should be given two vectors and a matrix, or a `RadiationPattern` .
-              Got: $(typeof(sp.args))")
+    if !(((length(pp.args) == 1) && (pp.args[1] isa RadiationPattern)) ||
+         ((length(pp.args) == 2) && (pp.args[1] isa AbstractVector &&
+                                     pp.args[2] isa AbstractVector)))
+       error("Polar pattern should be given two vectors of θ and gain, or a `RadiationPattern` .
+              Got: $(typeof(pp.args))")
    end
     if pp.args[1] isa RadiationPattern
-        @show pp.args[1]
-        θ = deg2rad.(pp.args[1].dims[2].val)
-        r = gain(pp.args[1])
+        if length(pp.args[1].dims) == 2
+            θ = deg2rad.(pp.args[1].dims[2].val)
+            r = gain(pp.args[1]) |> ustrip |> transpose
+        else
+            θ = deg2rad.(pp.args[1].dims[1].val)
+            r = gain(pp.args[1]) |> ustrip
+        end
     else
         θ, r = pp.args
     end
     # R is log-scalled, θ was in degrees
-    r = ustrip(r)
     if haskey(plotattributes, :lims)
         if plotattributes[:lims][1] == :auto
             min = minimum(r)

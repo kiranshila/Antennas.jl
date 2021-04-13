@@ -5,6 +5,7 @@ include("../src/Plotting.jl")
 x = read_HFSS_pattern("test/data/lens.csv")
 
 sphericalpattern(x)
+polarpattern(x[ϕ(At(0))])
 
 phi = 0:360
 theta = 0:360
@@ -33,3 +34,8 @@ r = ustrip(gain(buh[ϕ(At(0))]))
 theta = deg2rad.(Array(buh.dims[2].val))
 
 p = polarpattern(theta,r,lims=(-30,10))
+
+r1 = cos.(theta)
+r2 = 2*cos.(theta)
+
+plot(theta,[r1 r2],proj=:polar)
