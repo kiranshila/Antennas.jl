@@ -67,7 +67,6 @@ end
 end
 
 
-
 @userplot SphericalPattern
 @recipe function f(sp::SphericalPattern)
     if !(((length(sp.args) == 1) && (sp.args[1] isa RadiationPattern)) ||

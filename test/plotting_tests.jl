@@ -1,11 +1,11 @@
 using Plots
-plotlyjs()
+pgfplots()
 include("../src/Plotting.jl")
 
 x = read_HFSS_pattern("test/data/lens.csv")
 
 sphericalpattern(x)
-polarpattern(x[ϕ(At(0))])
+polarpattern(x[ϕ(At(90))],lims=(-20,20))
 
 phi = 0:360
 theta = 0:360

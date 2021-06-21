@@ -94,7 +94,7 @@ end
 
 """
     read_HFSS_pattern("myAntenna.csv")
-Reads the exported fields from HFSS into a `RadiationPattern`.
+Utility function to read the exported fields from HFSS into a `RadiationPattern`.
 """
 function read_HFSS_pattern(file)
     # Read Pattern

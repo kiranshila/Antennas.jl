@@ -2,57 +2,73 @@ using PhysicalConstants.CODATA2018
 using LinearAlgebra
 using Combinatorics
 using Unitful
+using RadiationPattern
 
 # Exports
-export ArrayFactor
+export AntennaArray
 export baselines
 
 """
-    ArrayFactor
+    AntennaArray
 Describes an array due to N isotropic radiators located at `locations` with
 phasor excitations `excitations`.
 """
-struct ArrayFactor
+struct AntennaArray
   locations::AbstractVector{NTuple{3,Unitful.Length}}
   excitations::AbstractVector{Number}
 end
 
-function (af::ArrayFactor)(ϕ,θ,freq)
+function (aa::AntennaArray)(ϕ::Number,θ::Number,freq::Number)
     # Direction of the source
     ŝ = [sind(θ)*cosd(ϕ),sind(θ)*sind(ϕ),cosd(θ)]
     k = @. 2π/λ(freq) * ŝ
     # Phases in the direction of ŝ
-    phases = cis.(-[k⋅b for b ∈ af.locations])
-    return (phases ⋅ af.excitations) / sum(abs.(af.excitations))
+    phases = cis.(-[k⋅b for b ∈ aa.locations])
+    return (phases ⋅ aa.excitations) / sum(abs.(aa.excitations))
 end
 
 """
-Constructing an ArrayFactor with locations as non-qunatities will be upcast to meters
+Constructing an AntennaArray with locations as non-qunatities will be upcast to meters
 """
-function ArrayFactor(locations::Array{NTuple{3,T}},excitations::AbstractVector) where {T <: Real}
-    ArrayFactor([loc.*u"m" for loc ∈ locations],excitations)
+function AntennaArray(locations::Array{NTuple{3,T}},excitations::AbstractVector) where {T <: Real}
+    AntennaArray([loc.*u"m" for loc ∈ locations],excitations)
 end
 
-function Base.show(io::IO,af::ArrayFactor)
-    println(io,"An Array Factor with $(length(af.excitations)) elements")
+function Base.show(io::IO,aa::AntennaArray)
+    println(io,"An Antenna Array with $(length(aa.excitations)) elements")
     println(io,"\tLocations:")
-    for loc ∈ af.locations
+    for loc ∈ aa.locations
         print(io,"\t\t")
         println(io,loc)
     end
     println(io,"\tExcitations:")
-    for a ∈ af.excitations
+    for a ∈ aa.excitations
         print(io,"\t\t")
         println(io,a)
     end
 end
 
+"""
+    ArrayFactor(aa)
+Constructs a `RadiationPattern` representative of the array factor of the array `aa`
+sampled over azimuth `ϕ` and elevation `θ` at frequenc[y|ies] `freq`.
+"""
+function ArrayFactor(aa::AntennaArray,ϕ,θ,freq::AbstractVector)
+    data = [aa(phi,theta,freq,f) for phi ∈ ϕ, theta ∈ θ, f ∈ freq]
+    RadiationPattern(data,ϕ,θ,freq)
+end
+
+function ArrayFactor(aa::AntennaArray,ϕ,θ,freq::Number)
+    data = [aa(phi,theta,freq,freq) for phi ∈ ϕ, theta ∈ θ]
+    RadiationPattern(data,ϕ,θ,freq)
+end
+
 """"
     baselines(af)
-Returns all the baseline vectors for the antenna locations in `af`.
+Returns all the baseline vectors for the antenna locations in `aa`.
 """
-function baselines(af::ArrayFactor)
-    [.-(pair...) for pair ∈ combinations(af.locations,2)]
+function baselines(aa::AntennaArray)
+    [.-(pair...) for pair ∈ combinations(aa.locations,2)]
 end
 
 function λ(f::Quantity)
@@ -65,6 +81,8 @@ end
 
 """
     calibrate(array,phase_center)
+For a given antenna array `array`, return a new `AntennaArray` whose phase center has been adjusted
+to `phase_center`.
 """
 function calibrate()
 
