@@ -1,22 +1,13 @@
 using PhysicalConstants.CODATA2018
 using LinearAlgebra
 using Combinatorics
-using Unitful
-using RadiationPattern
 
 # Exports
 export AntennaArray
 export baselines
-
-"""
-    AntennaArray
-Describes an array due to N isotropic radiators located at `locations` with
-phasor excitations `excitations`.
-"""
-struct AntennaArray
-  locations::AbstractVector{NTuple{3,Unitful.Length}}
-  excitations::AbstractVector{Number}
-end
+export baselines
+export λ
+export calibrate
 
 function (aa::AntennaArray)(ϕ::Number,θ::Number,freq::Number)
     # Direction of the source

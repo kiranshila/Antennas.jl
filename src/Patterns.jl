@@ -1,31 +1,14 @@
 using CSV
 using DataFrames
-using DimensionalData
 import DimensionalData.formatdims
-using Unitful
 
 export RadiationPattern
 export gain
 export read_HFSS_pattern
-export rebuild
 
 @dim ϕ "Elevation"
 @dim θ "Azimuth"
 @dim f "Frequency"
-
-struct RadiationPattern{T<:Number,
-                        N,
-                        D<:Tuple,
-                        R<:Tuple,
-                        A<:AbstractArray{T,N},
-                        Na,
-                        Me} <: AbstractDimArray{T,N,D,A}
-    data::A
-    dims::D
-    refdims::R
-    name::Na
-    metadata::Me
-end
 
 # Single frequency constructor
 function RadiationPattern(data::AbstractArray,azimuth,elevation ;name=NoName(), refdims=(), metadata=NoMetadata())

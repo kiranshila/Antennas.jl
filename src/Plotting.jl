@@ -1,9 +1,9 @@
 using RecipesBase
-using Unitful
 using UnitfulRecipes
-include("Arrays.jl")
-include("RadiationPattern.jl")
-include("Arrays.jl")
+
+#include("Arrays.jl")
+#include("RadiationPattern.jl")
+#include("Arrays.jl")
 
 function grid_pattern(ϕ, θ, r, min, max)
     shape = (length(ϕ), length(θ))
@@ -115,6 +115,7 @@ end
     end
 end
 
+#= 
 @recipe function f(af::ArrayFactor)
     # Extract unit from x
     u = unit(af.locations[1][1])
@@ -134,4 +135,4 @@ end
     else
         x, y, z
     end
-end
+end =#
