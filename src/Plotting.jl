@@ -114,25 +114,3 @@ end
         x, y, z
     end
 end
-
-#= 
-@recipe function f(af::ArrayFactor)
-    # Extract unit from x
-    u = unit(af.locations[1][1])
-    x = map(x -> x[1], af.locations) .|> u .|> ustrip
-    y = map(x -> x[2], af.locations) .|> u .|> ustrip
-    z = map(x -> x[3], af.locations) .|> u .|> ustrip
-
-    seriestype := :scatter
-    aspect_ratio --> :equal
-    xguide --> "X Position ($u)"
-    yguide --> "Y Position ($u)"
-    zguide --> "Z Position ($u)"
-    marker_z := abs.(af.excitations)
-    # Only do a 2D plot for 2D arrays
-    if all(x -> x == 0, z)
-        x, y
-    else
-        x, y, z
-    end
-end =#

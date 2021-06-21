@@ -7,7 +7,7 @@ using Unitful
 # Top level types
 """
     RadiationPattern
-Holds the pattern data, isa DimArray
+Holds the pattern data, isa AbstractDimArray
 """
 struct RadiationPattern{T<:Number,
     N,
@@ -25,12 +25,20 @@ end
 
 """
     AntennaArray
-Describes an array due to N isotropic radiators located at `locations` with
-phasor excitations `excitations`.
+Holds the antenna array data, isa AbstractDimArray
 """
-struct AntennaArray
-  locations::AbstractVector{NTuple{3,Unitful.Length}}
-  excitations::AbstractVector{Number}
+struct AntennaArray{T<:Number,
+    N,
+    D<:Tuple,
+    R<:Tuple,
+    A<:AbstractArray{T,N},
+    Na,
+    Me} <: AbstractDimArray{T,N,D,A}
+data::A
+dims::D
+refdims::R
+name::Na
+metadata::Me
 end
 
 include("Patterns.jl")
