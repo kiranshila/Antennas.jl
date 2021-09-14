@@ -5,9 +5,8 @@ import DimensionalData.formatdims
 
 # Exports
 export AntennaArray
+export ArrayFactor
 export baselines
-export baselines
-export λ
 export calibrate
 
 function λ(f::Quantity)
@@ -18,30 +17,22 @@ function λ(f::Real)
     SpeedOfLightInVacuum/(f*u"Hz") |> u"m"
 end
 
-add_dim(x::AbstractArray) = reshape(x, (size(x)...,1))
-
-function zeros_like(x)
-    a = similar(x)
-    a .= zero(typeof(a[1]))
+function phase_location(b::AbstractArray,ϕ::Number,θ::Number,freq::Number)
+    # Direction of the source
+    ŝ = [sind(θ)*cosd(ϕ),sind(θ)*sind(ϕ),cosd(θ)]
+    k = @. 2π/λ(freq) * ŝ
+    # Phase
+    cis(-k⋅b)
 end
 
-# 1D Array constructor - implicitly on the x axis
-function AntennaArray(excitations::AbstractArray,x ;name=NoName(), refdims=(), metadata=NoMetadata())
-    y = zeros_like(x)
-    z = zeros_like(x)
-    AntennaArray(excitations, formatdims(excitations |> add_dim |> add_dim, (X(x),Y(y),Z(z))), refdims, name, metadata)
+"""
+   AntennaArray(locations,ϕ,θ)
+Creates a new `AntennaArray` which represents the `locations` phased in the direction of `ϕ` and `θ`.
+"""
+function AntennaArray(locations,ϕ,θ,freq)
+    AntennaArray(phase_location.(locations,ϕ,θ,freq),locations)
 end
 
-# 2D Array constructor - implicitly on the x-y plane
-function AntennaArray(excitations::AbstractArray,x,y ;name=NoName(), refdims=(), metadata=NoMetadata())
-    z = zeros_like(x)
-    AntennaArray(excitations, formatdims(excitations |> add_dim, (X(x),Y(y),Z(z))), refdims, name, metadata)
-end
-
-# 3D Array constructor
-function AntennaArray(excitations::AbstractArray,x,y,z ;name=NoName(), refdims=(), metadata=NoMetadata())
-    AntennaArray(excitations, formatdims(excitations, (X(x),Y(y),Z(z))), refdims, name, metadata)
-end
 
 """
     aa(ϕ,θ,freq)
@@ -49,12 +40,7 @@ Finds the relative amplitude of the array factor for the array `aa` in the azimu
 elevation `θ` at frequency freq. Angles in degrees.
 """
 function (aa::AntennaArray)(ϕ::Number,θ::Number,freq::Number)
-    # Direction of the source
-    ŝ = [sind(θ)*cosd(ϕ),sind(θ)*sind(ϕ),cosd(θ)]
-    k = @. 2π/λ(freq) * ŝ
-    # Phases in the direction of ŝ
-    phases = cis.(-[k⋅b for b ∈ aa.locations])
-    return (phases ⋅ aa.excitations) / sum(abs.(aa.excitations))
+    (phase_location.(aa.locations,ϕ,θ,freq) ⋅ aa.excitations) / sum(abs.(aa.excitations))
 end
 
 """
@@ -63,13 +49,13 @@ Constructs a `RadiationPattern` representative of the array factor of the array 
 sampled over azimuth `ϕ` and elevation `θ` at frequenc[y|ies] `freq`.
 """
 function ArrayFactor(aa::AntennaArray,ϕ,θ,freq::AbstractVector)
-    data = [aa(phi,theta,freq,f) for phi ∈ ϕ, theta ∈ θ, f ∈ freq]
+    data = [aa(phi,theta,f) for phi ∈ ϕ, theta ∈ θ, f ∈ freq]
     RadiationPattern(data,ϕ,θ,freq)
 end
 
 function ArrayFactor(aa::AntennaArray,ϕ,θ,freq::Number)
-    data = [aa(phi,theta,freq,freq) for phi ∈ ϕ, theta ∈ θ]
-    RadiationPattern(data,ϕ,θ,freq)
+    data = [aa(phi,theta,freq) for phi ∈ ϕ, theta ∈ θ]
+    RadiationPattern(data,ϕ,θ)
 end
 
 """"

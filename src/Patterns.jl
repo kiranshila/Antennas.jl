@@ -6,8 +6,8 @@ export RadiationPattern
 export gain
 export read_HFSS_pattern
 
-@dim ϕ "Elevation"
-@dim θ "Azimuth"
+@dim ϕ "Azimuth"
+@dim θ "Elevation"
 @dim f "Frequency"
 
 # Single frequency constructor

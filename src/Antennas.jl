@@ -25,20 +25,11 @@ end
 
 """
     AntennaArray
-Holds the antenna array data, isa AbstractDimArray
+Holds the antenna array data
 """
-struct AntennaArray{T<:Number,
-    N,
-    D<:Tuple,
-    R<:Tuple,
-    A<:AbstractArray{T,N},
-    Na,
-    Me} <: AbstractDimArray{T,N,D,A}
-data::A
-dims::D
-refdims::R
-name::Na
-metadata::Me
+struct AntennaArray
+    excitations
+    locations
 end
 
 include("Patterns.jl")
